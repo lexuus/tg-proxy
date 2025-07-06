@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 const app = express();
 app.use(express.json());
 
-const WORKER_URL = "https://tg.perspolistehran.workers.dev"; // ← آدرس Worker یا api.telegram.org
+const WORKER_URL = "https://tg.perspolistehran.workers.dev";
 
 app.post("/", async (req, res) => {
   try {
@@ -13,9 +13,21 @@ app.post("/", async (req, res) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req.body),
     });
+
+    const contentType = result.headers.get("content-type");
     const text = await result.text();
+
     res.setHeader("Content-Type", "application/json");
-    res.send(text);
+
+    if (contentType && contentType.includes("application/json")) {
+      res.send(text); // JSON معتبر
+    } else {
+      res.status(502).json({
+        ok: false,
+        error: "پاسخ از سمت تلگرام JSON نبود",
+        body: text
+      });
+    }
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
